@@ -10,7 +10,6 @@ all: build
 #
 # Development
 #
-
 .PHONY: overlay
 overlay:
 	$(eval OVERLAY_DIR := $(shell mktemp -d))
@@ -65,6 +64,25 @@ $(SRC-DOC)/SOURCE: $(SRC-DOC)
 	echo -e "git clone $(shell git remote get-url origin)\ngit checkout $(shell git rev-parse HEAD)" > "$@"
 
 #
+# Documentation
+#
+.PHONY: serve
+serve:
+	mdbook serve
+
+.PHONY: serve_zh-CN
+serve_zh-CN:
+	MDBOOK_BOOK__LANGUAGE=zh-CN mdbook serve -d book/zh-CN
+
+.PHONY: translate
+translate:
+	MDBOOK_OUTPUT='{"xgettext": {"pot-file": "messages.pot"}}' mdbook build -d po
+	for i in po/*.po; \
+	do \
+		msgmerge --update $$i po/messages.pot; \
+	done
+
+#
 # Clean
 #
 .PHONY: distclean
@@ -90,7 +108,7 @@ clean-deb:
 #
 .PHONY: dch
 dch: debian/changelog
-	EDITOR=true gbp dch --commit --debian-branch=main --release --dch-opt=--upstream --multimaint-merge
+	EDITOR=true gbp dch --debian-branch=main --multimaint-merge --commit --release --dch-opt=--upstream
 
 .PHONY: deb
 deb: debian

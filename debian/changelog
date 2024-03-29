@@ -1,3 +1,58 @@
+rsetup (0.4.1) jammy; urgency=medium
+
+  [ dependabot[bot] ]
+  * Bump softprops/action-gh-release from 1 to 2
+
+  [ ZHANG Yuntian ]
+  * refactor: reorder make dch's argument ordering
+  * feat: add factory_stress command
+  * fix: need to split gpiofind's output into 2 arguments
+  * feat: using memtester to stress memory instead of stress-ng
+  * feat: add documentation
+  * fix: use correct MDBOOK_OUTPUT__HTML__SITE_URL
+  * fix: do not trigger code build if we are only update documentation
+  * fix: bump POT-Creation-Date
+  * doc: stress: add usage
+  * doc: stress: update translation
+  * doc: stress: make the state change more clear
+  * doc: stress: update zh-CN translation
+
+ -- "Radxa Computer Co., Ltd" <dev@radxa.com>  Fri, 15 Mar 2024 10:10:48 +0000
+
+rsetup (0.4.0) jammy; urgency=medium
+
+  [ ZHANG Yuntian ]
+  * feat: remove rsetup-config-hciattach-ttys1
+
+ -- "Radxa Computer Co., Ltd" <dev@radxa.com>  Mon, 26 Feb 2024 18:53:43 +0800
+
+rsetup (0.3.48) jammy; urgency=medium
+
+  [ ZHANG Yuntian ]
+  * fix: force removel of conflicting package again
+
+ -- "Radxa Computer Co., Ltd" <dev@radxa.com>  Mon, 26 Feb 2024 10:31:27 +0000
+
+rsetup (0.3.47) jammy; urgency=medium
+
+  [ ZHANG Yuntian ]
+  * fix: force removal of conflicting package
+
+ -- "Radxa Computer Co., Ltd" <dev@radxa.com>  Mon, 26 Feb 2024 10:10:35 +0000
+
+rsetup (0.3.46) jammy; urgency=medium
+
+  [ CodeChenL ]
+  * perf: add a concurrency limit for parse_dtbo and dtbo_is_compatible
+  * perf: removed __rebuild_overlays_worker
+  * feat: add cli function enable_overlays
+  * fix: fixes rsetup.service running connect_wi-fi error on startup
+
+  [ ZHANG Yuntian ]
+  * fix: ttyS1 should be manage by either packages, not both
+
+ -- "Radxa Computer Co., Ltd" <dev@radxa.com>  Mon, 26 Feb 2024 09:02:27 +0000
+
 rsetup (0.3.45) jammy; urgency=medium
 
   [ CodeChenL ]
