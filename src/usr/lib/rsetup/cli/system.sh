@@ -180,7 +180,7 @@ set_led_netdev() {
 
 set_getty_autologin() {
 
-    local systemd_override="/etc/systemd/system/$1.d"  switch="$2" execstart
+    local systemd_override="/etc/systemd/system/$1.d"  switch="$2" execstart user="${3:-$USER}"
 
     if [[ "$switch" == "ON" ]]
     then
@@ -188,9 +188,9 @@ set_getty_autologin() {
 
         if grep -q "serial" <<< "$systemd_override"
         then
-            execstart="ExecStart=-/sbin/agetty --autologin radxa --keep-baud 1500000,115200,57600,38400,9600 %I \$TERM"
+            execstart="ExecStart=-/sbin/agetty --autologin $user --keep-baud 1500000,115200,57600,38400,9600 %I \$TERM"
         else
-            execstart="ExecStart=-/sbin/agetty --autologin radxa --noclear %I \$TERM"
+            execstart="ExecStart=-/sbin/agetty --autologin $user --noclear %I \$TERM"
         fi
         cat << EOF | tee "$systemd_override"/override.conf >/dev/null
 [Service]
@@ -205,7 +205,7 @@ EOF
 
 set_serial_autologin() {
 
-    local getty switch="$1" available_getty=(serial-getty@ttyAML0.service serial-getty@ttyFIQ0.service)
+    local getty switch="$1" available_getty=(serial-getty@ttyAML0.service serial-getty@ttyFIQ0.service) user="${2:-$USER}"
 
     for i in "${available_getty[@]}"
     do
@@ -223,12 +223,12 @@ set_serial_autologin() {
         return 1
     fi
 
-    set_getty_autologin "$getty" "$switch"
+    set_getty_autologin "$getty" "$switch" "$user"
 }
 
 set_tty_autologin() {
 
-    local getty switch="$1" available_getty=(getty@tty1.service)
+    local getty switch="$1" available_getty=(getty@tty1.service) user="${2:-$USER}"
 
     for i in "${available_getty[@]}"
     do
@@ -246,18 +246,18 @@ set_tty_autologin() {
         return 1
     fi
 
-    set_getty_autologin "$getty" "$switch"
+    set_getty_autologin "$getty" "$switch" "$user"
 }
 
 set_sddm_autologin() {
-    local config_dir="/etc/sddm.conf.d" switch="$1"
+    local config_dir="/etc/sddm.conf.d" switch="$1" user="${2:-$USER}"
 
     if [[ "$switch" == "ON" ]]
     then
         mkdir -p $config_dir
         cat << EOF | tee $config_dir/autologin.conf >/dev/null
 [Autologin]
-User=radxa
+User=$user
 Session=plasma
 EOF
     else
@@ -275,7 +275,7 @@ set_gdm_autologin() {
         cat << EOF | tee -a $config_dir/daemon.conf >/dev/null
 # Rsetup
 [daemon]
-AutomaticLogin=radxa
+AutomaticLogin=$user
 AutomaticLoginEnable=true
 # Rsetup
 EOF
@@ -285,18 +285,18 @@ EOF
 }
 
 set_lightdm_autologin() {
-    local config_dir="/etc/lightdm" switch="$1"
+    local config_dir="/etc/lightdm" switch="$1" user="${2:-$USER}"
 
     if [[ "$switch" == "ON" ]]
     then
         groupadd autologin
-        gpasswd -a radxa autologin
+        gpasswd -a "$user" autologin
         mkdir -p $config_dir
         sed -i '/^# Rsetup/,/# Rsetup$/d' $config_dir/lightdm.conf
         cat << EOF | tee -a $config_dir/lightdm.conf >/dev/null
 # Rsetup
 [Seat:*]
-autologin-user=radxa
+autologin-user=$user
 autologin-session=plasma
 # Rsetup
 EOF
@@ -325,26 +325,26 @@ get_autologin_status() {
 }
 
 set_autologin_status() {
-    local item="$1" switch="$2"
+    local item="$1" switch="$2" user="${3:-$USER}"
 
     case "$item" in
     serial-getty@ttyAML0|serial-getty@ttyFIQ0)
-        set_serial_autologin "$switch"
+        set_serial_autologin "$switch" "$user"
         ;;
     getty@tty1)
-        set_tty_autologin "$switch"
+        set_tty_autologin "$switch" "$user"
         ;;
     sddm)
-        set_sddm_autologin "$switch"
+        set_sddm_autologin "$switch" "$user"
         ;;
     gdm)
-        set_gdm_autologin "$switch"
+        set_gdm_autologin "$switch" "$user"
         ;;
     lightdm)
-        set_lightdm_autologin "$switch"
+        set_lightdm_autologin "$switch" "$user"
         ;;
     *)
-        echo "Invalid options: $item"
+        echo "Invalid options: $item" "$user"
         ;;
     esac
 }
