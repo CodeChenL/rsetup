@@ -177,3 +177,136 @@ set_led_netdev() {
         echo "1" > "$node/rx"
     done
 }
+
+set_getty_autologin() {
+
+    local systemd_override="/etc/systemd/system/$1.d"  switch="$2" execstart
+
+    if [[ "$switch" == "ON" ]]
+    then
+        mkdir -p "$systemd_override"
+
+        if grep -q "serial" <<< "$systemd_override"
+        then
+            execstart="ExecStart=-/sbin/agetty --autologin radxa --keep-baud 1500000,115200,57600,38400,9600 %I \$TERM"
+        else
+            execstart="ExecStart=-/sbin/agetty --autologin radxa --noclear %I \$TERM"
+        fi
+        cat << EOF | tee "$systemd_override"/override.conf >/dev/null
+[Service]
+ExecStart=
+$execstart
+EOF
+    else
+        rm -rf "$systemd_override/override.conf"
+    fi
+
+}
+
+set_serial_autologin() {
+
+    local getty switch="$1" available_getty=(serial-getty@ttyAML0.service serial-getty@ttyFIQ0.service)
+
+    for i in "${available_getty[@]}"
+    do
+        if [[ -z "$(systemctl list-units --no-legend "$i")" ]]
+        then
+            continue
+        else
+            getty="$i"
+        fi
+    done
+
+    if [[ -z "$getty" ]]
+    then
+        echo "No getty service found." >&2
+        return 1
+    fi
+
+    set_getty_autologin "$getty" "$switch"
+}
+
+set_tty_autologin() {
+
+    local getty switch="$1" available_getty=(getty@tty1.service)
+
+    for i in "${available_getty[@]}"
+    do
+        if [[ -z "$(systemctl list-units --no-legend "$i")" ]]
+        then
+            continue
+        else
+            getty="$i"
+        fi
+    done
+
+    if [[ -z "$getty" ]]
+    then
+        echo "No getty service found." >&2
+        return 1
+    fi
+
+    set_getty_autologin "$getty" "$switch"
+}
+
+set_sddm_autologin() {
+    local config_dir="/etc/sddm.conf.d" switch="$1"
+
+    if [[ "$switch" == "ON" ]]
+    then
+        mkdir -p $config_dir
+        cat << EOF | tee $config_dir/autologin.conf >/dev/null
+[Autologin]
+User=radxa
+Session=plasma
+EOF
+    else
+        rm -rf "$config_dir/autologin.conf"
+    fi
+}
+
+set_gdm_autologin() {
+    local config_dir="/etc/gdm3" switch="$1"
+
+    if [[ "$switch" == "ON" ]]
+    then
+        xmllint --shell /usr/share/gdm/gdm.schemas << EOF
+cd /gdmschemafile/schemalist/schema[key="daemon/AutomaticLoginEnable"]/default
+set true
+cd /gdmschemafile/schemalist/schema[key="daemon/AutomaticLogin"]/default
+set radxa
+save
+EOF
+    echo "XSession=plasma" > /var/lib/AccountsService/users/radxa
+    else
+        xmllint --shell /usr/share/gdm/gdm.schemas << EOF
+cd /gdmschemafile/schemalist/schema[key="daemon/AutomaticLoginEnable"]/default
+set false
+cd /gdmschemafile/schemalist/schema[key="daemon/AutomaticLogin"]/default
+set ""
+save null
+EOF
+        rm -rf "/var/lib/AccountsService/users/radxa"
+    fi
+}
+
+set_lightdm_autologin() {
+    local config_dir="/etc/lightdm" switch="$1"
+
+    if [[ "$switch" == "ON" ]]
+    then
+        groupadd autologin
+        gpasswd -a radxa autologin
+        mkdir -p $config_dir
+        cat << EOF | tee -a $config_dir/lightdm.conf >/dev/null
+# Rsetup
+[Seat:*]
+autologin-user=radxa
+autologin-session=plasma
+# Rsetup
+
+EOF
+    else
+        sed -i '/^# Rsetup/,/# Rsetup$/d' $config_dir/lightdm.conf
+    fi
+}
