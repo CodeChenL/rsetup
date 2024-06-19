@@ -304,3 +304,47 @@ EOF
         sed -i '/^# Rsetup/,/# Rsetup$/d' $config_dir/lightdm.conf
     fi
 }
+
+get_autologin_status() {
+    local service=(serial-getty@ttyAML0 serial-getty@ttyFIQ0 getty@tty1 sddm gdm lightdm) available=()
+
+    for i in "${service[@]}"
+    do
+        if [[ -n "$(systemctl list-units --no-legend "$i".service)" ]]
+        then
+            available+=("$i")
+            if [[ -n "$(systemctl is-enabled "$i")" ]]
+            then
+                available+=("ON")
+            else
+                available+=("OFF")
+            fi
+        fi
+    done
+    echo "${available[@]}"
+}
+
+set_autologin_status() {
+    local item="$1" switch="$2"
+
+    case "$item" in
+    serial-getty@ttyAML0|serial-getty@ttyFIQ0)
+        set_serial_autologin "$switch"
+        ;;
+    getty@tty1)
+        set_tty_autologin "$switch"
+        ;;
+    sddm)
+        set_sddm_autologin "$switch"
+        ;;
+    gdm)
+        set_gdm_autologin "$switch"
+        ;;
+    lightdm)
+        set_lightdm_autologin "$switch"
+        ;;
+    *)
+        echo "Invalid options: $item"
+        ;;
+    esac
+}
