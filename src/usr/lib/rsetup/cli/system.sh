@@ -271,13 +271,13 @@ set_gdm_autologin() {
     if [[ "$switch" == "ON" ]]
     then
         mkdir -p $config_dir
+        sed -i '/^# Rsetup/,/# Rsetup$/d' $config_dir/daemon.conf
         cat << EOF | tee -a $config_dir/daemon.conf >/dev/null
 # Rsetup
 [daemon]
 AutomaticLogin=radxa
 AutomaticLoginEnable=true
 # Rsetup
-
 EOF
     else
         sed -i '/^# Rsetup/,/# Rsetup$/d' $config_dir/daemon.conf
@@ -292,13 +292,13 @@ set_lightdm_autologin() {
         groupadd autologin
         gpasswd -a radxa autologin
         mkdir -p $config_dir
+        sed -i '/^# Rsetup/,/# Rsetup$/d' $config_dir/lightdm.conf
         cat << EOF | tee -a $config_dir/lightdm.conf >/dev/null
 # Rsetup
 [Seat:*]
 autologin-user=radxa
 autologin-session=plasma
 # Rsetup
-
 EOF
     else
         sed -i '/^# Rsetup/,/# Rsetup$/d' $config_dir/lightdm.conf
