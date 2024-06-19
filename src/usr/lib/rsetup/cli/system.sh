@@ -270,23 +270,17 @@ set_gdm_autologin() {
 
     if [[ "$switch" == "ON" ]]
     then
-        xmllint --shell /usr/share/gdm/gdm.schemas << EOF
-cd /gdmschemafile/schemalist/schema[key="daemon/AutomaticLoginEnable"]/default
-set true
-cd /gdmschemafile/schemalist/schema[key="daemon/AutomaticLogin"]/default
-set radxa
-save
+        mkdir -p $config_dir
+        cat << EOF | tee -a $config_dir/daemon.conf >/dev/null
+# Rsetup
+[daemon]
+AutomaticLogin=radxa
+AutomaticLoginEnable=true
+# Rsetup
+
 EOF
-    echo "XSession=plasma" > /var/lib/AccountsService/users/radxa
     else
-        xmllint --shell /usr/share/gdm/gdm.schemas << EOF
-cd /gdmschemafile/schemalist/schema[key="daemon/AutomaticLoginEnable"]/default
-set false
-cd /gdmschemafile/schemalist/schema[key="daemon/AutomaticLogin"]/default
-set ""
-save null
-EOF
-        rm -rf "/var/lib/AccountsService/users/radxa"
+        sed -i '/^# Rsetup/,/# Rsetup$/d' $config_dir/daemon.conf
     fi
 }
 
