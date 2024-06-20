@@ -180,7 +180,7 @@ set_led_netdev() {
 
 set_getty_autologin() {
 
-    local systemd_override="/etc/systemd/system/$1.d"  switch="$2" execstart user="${3:-$USER}"
+    local systemd_override="/etc/systemd/system/$1.d" switch="$2" execstart user="${3:-$USER}"
 
     if [[ "$switch" == "ON" ]]
     then
@@ -201,52 +201,6 @@ EOF
         rm -rf "$systemd_override/override.conf"
     fi
 
-}
-
-set_serial_autologin() {
-
-    local getty switch="$1" available_getty=(serial-getty@ttyAML0.service serial-getty@ttyFIQ0.service) user="${2:-$USER}"
-
-    for i in "${available_getty[@]}"
-    do
-        if [[ -z "$(systemctl list-units --no-legend "$i")" ]]
-        then
-            continue
-        else
-            getty="$i"
-        fi
-    done
-
-    if [[ -z "$getty" ]]
-    then
-        echo "No getty service found." >&2
-        return 1
-    fi
-
-    set_getty_autologin "$getty" "$switch" "$user"
-}
-
-set_tty_autologin() {
-
-    local getty switch="$1" available_getty=(getty@tty1.service) user="${2:-$USER}"
-
-    for i in "${available_getty[@]}"
-    do
-        if [[ -z "$(systemctl list-units --no-legend "$i")" ]]
-        then
-            continue
-        else
-            getty="$i"
-        fi
-    done
-
-    if [[ -z "$getty" ]]
-    then
-        echo "No getty service found." >&2
-        return 1
-    fi
-
-    set_getty_autologin "$getty" "$switch" "$user"
 }
 
 set_sddm_autologin() {
@@ -359,11 +313,8 @@ set_autologin_status() {
     local item="$1" switch="$2" user="${3:-$USER}"
 
     case "$item" in
-    serial-getty@ttyAML0|serial-getty@ttyFIQ0)
-        set_serial_autologin "$switch" "$user"
-        ;;
-    getty@tty1)
-        set_tty_autologin "$switch" "$user"
+    serial-getty@ttyAML0|serial-getty@ttyFIQ0|getty@tty1)
+        set_getty_autologin "$item" "$switch" "$user"
         ;;
     sddm)
         set_sddm_autologin "$switch" "$user"
