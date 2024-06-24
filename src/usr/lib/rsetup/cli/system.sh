@@ -266,15 +266,16 @@ EOF
 }
 
 get_autologin_status() {
-    local service=$1 status
+    local service="$1"
+    local status="OFF"
 
-    if [[ -n "$(systemctl list-units --no-legend "$i".service)" ]]
+    if [[ -n "$(systemctl list-units --no-legend "$service".service)" ]]
     then
-        if ! grep -q -e "disabled" -e "not-found" <(systemctl is-enabled "$i")
+        if ! grep -q -e "disabled" -e "not-found" <(systemctl is-enabled "$service")
         then
-            case "$i" in
+            case "$service" in
             serial-getty@ttyAML0|serial-getty@ttyFIQ0|getty@tty1)
-                if grep -q -e "--autologin" "/etc/systemd/system/$i.service.d/override.conf"
+                if grep -q -e "--autologin" "/etc/systemd/system/$service.service.d/override.conf"
                 then
                     status="ON"
                 else
