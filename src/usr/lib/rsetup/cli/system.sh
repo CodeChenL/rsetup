@@ -179,8 +179,13 @@ set_led_netdev() {
 }
 
 set_getty_autologin() {
+    local service="$1" systemd_override="/etc/systemd/system/$1.service.d" switch="$2" execstart user="$3"
 
-    local systemd_override="/etc/systemd/system/$1.d" switch="$2" execstart user="$3"
+    if [[ -n "$(systemctl list-units --no-legend "$service".service)" ]] || ! grep -q -e "disabled" -e "not-found" <(systemctl is-enabled "$service")
+    then
+        echo "$service is disabled."
+        return 1
+    fi
 
     if [[ "$switch" == "ON" ]]
     then
