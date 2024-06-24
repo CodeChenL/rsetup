@@ -318,7 +318,7 @@ set_autologin_status() {
         set_getty_autologin "$item" "$switch" "$user"
         ;;
     sddm|gdm|lightdm)
-        "set_$item_autologin" "$switch" "$user"
+        set_"$item"_autologin "$switch" "$user"
         ;;
     *)
         echo "Invalid options: $item" "$user"
