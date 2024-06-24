@@ -261,53 +261,49 @@ EOF
 }
 
 get_autologin_status() {
-    local service=(serial-getty@ttyAML0 serial-getty@ttyFIQ0 getty@tty1 sddm gdm lightdm) available=()
+    local service=$1 status
 
-    for i in "${service[@]}"
-    do
-        if [[ -n "$(systemctl list-units --no-legend "$i".service)" ]]
+    if [[ -n "$(systemctl list-units --no-legend "$i".service)" ]]
+    then
+        if ! grep -q -e "disabled" -e "not-found" <(systemctl is-enabled "$i")
         then
-            if ! grep -q -e "disabled" -e "not-found" <(systemctl is-enabled "$i")
-            then
-                available+=("$i")
-                case "$i" in
-                serial-getty@ttyAML0|serial-getty@ttyFIQ0|getty@tty1)
-                    if grep -q -e "--autologin" "/etc/systemd/system/$i.service.d/override.conf"
-                    then
-                        available+=("ON")
-                    else
-                        available+=("OFF")
-                    fi
-                    ;;
-                sddm)
-                    if grep -q -e "[Autologin]" -e "User=" -e "Session=plasma" <(grep -v '^#' "/etc/sddm.conf.d/autologin.conf")
-                    then
-                        available+=("ON")
-                    else
-                        available+=("OFF")
-                    fi
-                    ;;
-                gdm)
-                    if grep -q -e "AutomaticLogin=" -e "AutomaticLoginEnable=true" <(grep -v '^#' "/etc/gdm3/daemon.conf")
-                    then
-                        available+=("ON")
-                    else
-                        available+=("OFF")
-                    fi
-                    ;;
-                lightdm)
-                    if grep -q -e "[Seat:*]" -e "autologin-user=" -e "autologin-session=plasma" <(grep -v '^#' "/etc/lightdm/lightdm.conf")
-                    then
-                        available+=("ON")
-                    else
-                        available+=("OFF")
-                    fi
-                    ;;
-                esac
-            fi
+            case "$i" in
+            serial-getty@ttyAML0|serial-getty@ttyFIQ0|getty@tty1)
+                if grep -q -e "--autologin" "/etc/systemd/system/$i.service.d/override.conf"
+                then
+                    status="ON"
+                else
+                    status="OFF"
+                fi
+                ;;
+            sddm)
+                if grep -q -e "[Autologin]" -e "User=" -e "Session=plasma" <(grep -v '^#' "/etc/sddm.conf.d/autologin.conf")
+                then
+                    status="ON"
+                else
+                    status="OFF"
+                fi
+                ;;
+            gdm)
+                if grep -q -e "AutomaticLogin=" -e "AutomaticLoginEnable=true" <(grep -v '^#' "/etc/gdm3/daemon.conf")
+                then
+                    status="ON"
+                else
+                    status="OFF"
+                fi
+                ;;
+            lightdm)
+                if grep -q -e "[Seat:*]" -e "autologin-user=" -e "autologin-session=plasma" <(grep -v '^#' "/etc/lightdm/lightdm.conf")
+                then
+                    status="ON"
+                else
+                    status="OFF"
+                fi
+                ;;
+            esac
         fi
-    done
-    echo "${available[@]}"
+    fi
+    echo "$status"
 }
 
 set_autologin_status() {
