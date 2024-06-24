@@ -179,7 +179,8 @@ set_led_netdev() {
 }
 
 set_getty_autologin() {
-    local systemd_override="/etc/systemd/system/$1.d" switch="$2" execstart user="${3:-$USER}"
+
+    local systemd_override="/etc/systemd/system/$1.d" switch="$2" execstart user="$3"
 
     if [[ "$switch" == "ON" ]]
     then
@@ -204,7 +205,7 @@ EOF
 }
 
 set_sddm_autologin() {
-    local config_dir="/etc/sddm.conf.d" switch="$1" user="${2:-$USER}"
+    local config_dir="/etc/sddm.conf.d" switch="$1" user="$2"
 
     if [[ "$switch" == "ON" ]]
     then
@@ -239,7 +240,7 @@ EOF
 }
 
 set_lightdm_autologin() {
-    local config_dir="/etc/lightdm" switch="$1" user="${2:-$USER}"
+    local config_dir="/etc/lightdm" switch="$1" user="$2"
 
     if [[ "$switch" == "ON" ]]
     then
@@ -310,7 +311,7 @@ get_autologin_status() {
 }
 
 set_autologin_status() {
-    local item="$1" switch="$2" user="${3:-$USER}"
+    local item="$1" switch="$2" user="$3"
 
     case "$item" in
     serial-getty@*|getty@*)
