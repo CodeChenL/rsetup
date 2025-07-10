@@ -2,7 +2,7 @@
 Description=hciattach on %I
 Documentation=https://github.com/radxa-pkg/rsetup/
 BindsTo=dev-%i.device
-After=dev-%i.device
+After=dev-%i.device multi-user.target
 
 [Service]
 Type=forking
