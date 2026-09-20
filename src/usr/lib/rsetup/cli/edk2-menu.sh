@@ -109,14 +109,7 @@ disable_edk2_overlays() {
     if ! load_edk2_setting; then
         return 1
     fi
-
-    if (( $# == 0 ))
-    then
-        disable_overlays_general
-    else
-        disable_overlay_general "$@" || return $?
-        update_entry_overlays
-    fi
+    disable_overlays_general
 }
 
 rebuild_edk2_overlays() {

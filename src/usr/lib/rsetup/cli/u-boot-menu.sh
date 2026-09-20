@@ -34,14 +34,7 @@ disable_u-boot_overlays() {
     if ! load_u-boot_setting; then
         return 1
     fi
-
-    if (( $# == 0 ))
-    then
-        disable_overlays_general
-    else
-        disable_overlay_general "$@" || return $?
-        u-boot-update
-    fi
+    disable_overlays_general
 }
 
 rebuild_u-boot_overlays() {
