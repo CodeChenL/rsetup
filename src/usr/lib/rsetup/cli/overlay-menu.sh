@@ -59,32 +59,27 @@ __overlay_resolve() {
         return 1
     fi
 
-    echo "$FDT_OVERLAYS_DIR/$file"
+    echo "$file"
 }
 
 __validate_overlay_set() {
     (
-        msgbox() {
-            echo "$1" >&2
-        }
-
+        msgbox() { echo "$1" >&2; }
         # shellcheck disable=SC2329
-        yesno() {
-            return 0
-        }
+        yesno() { return 0; }
 
-        local i title package
+        local item title package
 
         check_overlay_conflict_init
-        for i in "$@"
+        for item in "$@"
         do
-            if ! check_overlay_conflict "$i"*
+            if ! check_overlay_conflict "$FDT_OVERLAYS_DIR/$item"*
             then
                 return 1
             fi
 
-            mapfile -t title < <(parse_dtbo --default-value "file" "title" "$i"*)
-            mapfile -t package < <(parse_dtbo "package" "$i"*)
+            mapfile -t title < <(parse_dtbo --default-value "file" "title" "$FDT_OVERLAYS_DIR/$item"*)
+            mapfile -t package < <(parse_dtbo "package" "$FDT_OVERLAYS_DIR/$item"*)
             if [[ "${package[0]:-null}" != "null" ]] && ! __depends_package "${title[0]}" "${package[@]}"
             then
                 echo "Failed to install required packages for '${title[0]}'." >&2
@@ -163,6 +158,17 @@ enable_overlays() {
     return "$ret"
 }
 
+apply_overlays() {
+    disable_overlays || return $?
+
+    if (( $# == 0 ))
+    then
+        update_overlay_entry
+    else
+        enable_overlays "$@"
+    fi
+}
+
 __overlay_usage() {
     echo "Usage: rsetup overlay [--enable|--disable] <overlay>..." >&2
     echo "  --enable, -e   enable the given overlays" >&2
@@ -171,8 +177,8 @@ __overlay_usage() {
 }
 
 overlay() {
-    local mode="toggle" arg resolved ret=0 i
-    local names=() enable_items=() disable_items=() seen=()
+    local mode="toggle" arg resolved path
+    local names=() selected=() enabled_items=() disabled_items=() seen=()
 
     for arg in "$@"
     do
@@ -223,6 +229,14 @@ overlay() {
     load_overlay_setting
     __overlay_guard || return 1
 
+    for path in "$FDT_OVERLAYS_DIR"/*.dtbo
+    do
+        if [[ -f "$path" ]]
+        then
+            selected+=("$(basename "$path")")
+        fi
+    done
+
     for arg in "${names[@]}"
     do
         resolved="$(__overlay_resolve "$arg")" || return "$ERROR_ILLEGAL_PARAMETERS"
@@ -235,80 +249,38 @@ overlay() {
 
         if [[ "$mode" == "enable" ]]
         then
-            enable_items+=("$resolved")
+            if ! __in_array "$resolved" "${selected[@]}" >/dev/null
+            then
+                selected+=("$resolved")
+            fi
+            enabled_items+=("$resolved")
         elif [[ "$mode" == "disable" ]]
         then
-            disable_items+=("$resolved")
-        elif [[ -e "$resolved" ]]
+            __array_remove selected "$resolved"
+            disabled_items+=("$resolved")
+        elif __in_array "$resolved" "${selected[@]}" >/dev/null
         then
-            disable_items+=("$resolved")
+            __array_remove selected "$resolved"
+            disabled_items+=("$resolved")
         else
-            enable_items+=("$resolved")
+            selected+=("$resolved")
+            enabled_items+=("$resolved")
         fi
     done
 
-    if (( ${#enable_items[@]} != 0 ))
+    if (( ${#selected[@]} != 0 ))
     then
-        local resulting=()
-        for i in "${enable_items[@]}"
-        do
-            if ! __in_array "$i" "${resulting[@]}" >/dev/null
-            then
-                resulting+=("$i")
-            fi
-        done
-
-        for i in "$FDT_OVERLAYS_DIR"/*.dtbo
-        do
-            if [[ ! -e "$i" ]]
-            then
-                continue
-            fi
-
-            if __in_array "$i" "${disable_items[@]}" >/dev/null
-            then
-                continue
-            fi
-
-            if ! __in_array "$i" "${resulting[@]}" >/dev/null
-            then
-                resulting+=("$i")
-            fi
-        done
-
-        __validate_overlay_set "${resulting[@]}" || return "$?"
+        __validate_overlay_set "${selected[@]}" || return "$?"
     fi
+    apply_overlays "${selected[@]}" || return $?
 
-    if (( ${#disable_items[@]} != 0 ))
-    then
-        if is_u-boot_exist
-        then
-            disable_u-boot_overlays "${disable_items[@]}" || ret=$?
-        fi
-
-        if is_edk2_exist
-        then
-            disable_edk2_overlays "${disable_items[@]}" || ret=$?
-        fi
-    fi
-
-    if (( ret == 0 )) && (( ${#enable_items[@]} != 0 ))
-    then
-        enable_overlays "${enable_items[@]}" || ret=$?
-    fi
-
-    if (( ret != 0 ))
-    then
-        return "$ret"
-    fi
-
-    for i in "${disable_items[@]}"
+    for resolved in "${disabled_items[@]}"
     do
-        printf 'Disabled: %s\n' "$(basename "$i")"
+        printf 'Disabled: %s\n' "$resolved"
     done
 
-    for i in "${enable_items[@]}"
+    for resolved in "${enabled_items[@]}"
     do
-        printf 'Enabled: %s\n' "$(basename "$i")"
+        printf 'Enabled: %s\n' "$resolved"
     done
 }
