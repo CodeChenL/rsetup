@@ -283,12 +283,12 @@ overlay() {
     then
         if is_u-boot_exist
         then
-            disable_u-boot_overlay "${disable_items[@]}" || ret=$?
+            disable_u-boot_overlays "${disable_items[@]}" || ret=$?
         fi
 
         if is_edk2_exist
         then
-            disable_edk2_overlay "${disable_items[@]}" || ret=$?
+            disable_edk2_overlays "${disable_items[@]}" || ret=$?
         fi
     fi
 
