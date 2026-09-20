@@ -149,7 +149,7 @@ Are you sure to continue?"; then
         then
             if ! __depends_package "${title[0]}" "${package[@]}"
             then
-                msgbox "Failed to install required packages for '${title[0]}'." "$RTUI_PALETTE_ERROR"
+                msgbox "Required packages for '${title[0]}' are not installed." "$RTUI_PALETTE_ERROR"
                 return 1
             fi
         fi
@@ -162,7 +162,11 @@ __overlay_manage() {
         return
     fi
 
-    disable_overlays
+    if ! disable_overlays
+    then
+        msgbox "Unable to apply the overlay changes."
+        return
+    fi
 
     local items=() ret
     for i in "${RTUI_CHECKLIST_STATE_NEW[@]}"
@@ -172,7 +176,10 @@ __overlay_manage() {
 
     if (( ${#items[@]} == 0 ))
     then
-        update_overlay_entry
+        if ! update_overlay_entry >/dev/null
+        then
+            msgbox "Unable to apply the overlay changes."
+        fi
         return
     fi
 
@@ -186,7 +193,7 @@ __overlay_manage() {
                 msgbox "The selection contains non-existing overlays. Did you delete them?"
                 ;;
             *)
-                msgbox "Unable to update the boot config."
+                msgbox "Unable to apply the overlay changes."
                 ;;
         esac
     fi
